@@ -4352,7 +4352,7 @@ char* dialog_js =
 	"		return width;\n"
 	"	}\n"
 	"\n"
-	"	var pixelsPerRow = 192; // hard-coded fun times!!!\n"
+	"	var pixelsPerRow = 100; // hard-coded fun times!!!\n"
 	"\n"
 	"	this.AddScriptReturn = function(onReturnHandler) {\n"
 	"		var curPageIndex = buffer.length - 1;\n"
