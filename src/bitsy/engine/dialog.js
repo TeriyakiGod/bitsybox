@@ -605,7 +605,7 @@ var DialogBuffer = function() {
 		return width;
 	}
 
-	var pixelsPerRow = 192; // hard-coded fun times!!!
+	var pixelsPerRow = 100; // hard-coded fun times!!!
 
 	this.AddScriptReturn = function(onReturnHandler) {
 		var curPageIndex = buffer.length - 1;

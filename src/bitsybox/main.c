@@ -43,20 +43,11 @@ static void fatalError(void* udata, const char* msg) {
 
 /* # WINDOW */
 
-#if defined(PLATFORM_RPI) && !defined(BUILD_DEBUG)
 int isFullscreen = 1;
-#else
-int isFullscreen = 0;
-#endif
 int isFullscreenShortcut = 0;
-int didWindowResizeThisFrame = 0;
 
-int windowWidth = 0;
-int windowHeight = 0;
-
-void onWindowResize() {
-	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-}
+int windowWidth = 128;
+int windowHeight = 128;
 
 /* # MEMORY */
 
@@ -118,8 +109,8 @@ int curGraphicsMode;
 int curTextMode;
 
 // render scales
-int renderScale = 4;
-int textboxRenderScale = 2;
+int renderScale = 1;
+int textboxRenderScale = 1;
 
 // should SDL textures be re-rendered this frame?
 int shouldRenderTextures = 0;
@@ -497,7 +488,7 @@ duk_ret_t bitsyTextMode(duk_context* ctx) {
 		curTextMode = duk_get_int(ctx, 0);
 
 		// update the textbox render scale
-		textboxRenderScale = (curTextMode == BITSY_TXT_LOREZ) ? 4 : 2;
+		textboxRenderScale = 1;
 
 		if (curTextMode != prevTextMode) {
 			shouldRenderTextures = 1;
@@ -1066,11 +1057,6 @@ void updateInput() {
 		if (event.type == SDL_QUIT) {
 			shouldContinue = 0;
 		}
-		else if (event.type == SDL_WINDOWEVENT) {
-			if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-				didWindowResizeThisFrame = 1;
-			}
-		}
 		else if (event.type == SDL_KEYDOWN) {
 			if (event.key.keysym.sym == SDLK_UP) {
 				isButtonUp = 1;
@@ -1235,36 +1221,6 @@ void updateInput() {
 				isButtonPadStart = 0;
 			}
 		}
-	}
-
-	// get mouse state
-	int windowMouseX = 0;
-	int windowMouseY = 0;
-	isLeftMouseDown = SDL_GetMouseState(&windowMouseX, &windowMouseY) & SDL_BUTTON(1);
-
-	// normalize mouse position to bitsy scale
-	int screenSize = (windowWidth <= windowHeight) ? windowWidth : windowHeight;
-	int screenLeft = (windowWidth / 2) - (screenSize / 2);
-	int screenTop = (windowHeight / 2) - (screenSize / 2);
-	float pixelRatio = ((float) BITSY_VIDEO_SIZE) / ((float) screenSize);
-	mouseX = floor((windowMouseX - screenLeft) * pixelRatio);
-	mouseY = floor((windowMouseY - screenTop) * pixelRatio);
-
-	// toggle fullscreen
-	int prevFrameFullscreenShortcut = isFullscreenShortcut;
-	isFullscreenShortcut = (isButtonLAlt || isButtonRAlt) && isButtonReturn;
-
-	if (isFullscreenShortcut && !prevFrameFullscreenShortcut) {
-		isFullscreen = (isFullscreen == 0 ? 1 : 0);
-
-		SDL_ShowCursor(!isFullscreen);
-		SDL_SetWindowFullscreen(window, isFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-
-		if (!isFullscreen) {
-			SDL_SetWindowSize(window, (BITSY_VIDEO_SIZE * renderScale), (BITSY_VIDEO_SIZE * renderScale));
-		}
-
-		didWindowResizeThisFrame = 1;
 	}
 }
 
@@ -1500,12 +1456,6 @@ void updateSystem(duk_context* ctx, int deltaTime) {
 
 	// draw frame
 	renderFrame();
-
-	if (didWindowResizeThisFrame) {
-		onWindowResize();
-	}
-
-	didWindowResizeThisFrame = 0;
 }
 
 /* # BITSYBOX MODES */
@@ -1521,7 +1471,7 @@ void bootMenu() {
 	duk_peval_string(ctx, "__bitsybox_game_files__ = []");
 	duk_pop(ctx);
 	struct dirent* files;
-	DIR* dir = opendir("./games");
+	DIR* dir = opendir("../games");
 
 	if (dir != NULL ) {
 		while ((files = readdir(dir)) != NULL) {
@@ -1572,7 +1522,7 @@ void bootMenu() {
 		duk_pop(ctx);
 
 		duk_peval_string(ctx, "__bitsybox_selected_game__");
-		sprintf(gameFilePath, "./games/%s", duk_get_string(ctx, -1));
+		sprintf(gameFilePath, "../games/%s", duk_get_string(ctx, -1));
 		duk_pop(ctx);
 
 		duk_peval_string(ctx, "__bitsybox_game_files__.length");
@@ -1695,23 +1645,6 @@ void tuneTool() {
 		deltaTime = SDL_GetTicks() - prevTime;
 		prevTime = SDL_GetTicks();
 
-		// update mouse state
-		int isMouseOnScreen = (mouseX >= 0 && mouseX < BITSY_VIDEO_SIZE && mouseY >= 0 && mouseY < BITSY_VIDEO_SIZE);
-		duk_push_boolean(ctx, isLeftMouseDown && isMouseOnScreen);
-		duk_put_global_string(ctx, "__bitsybox_mouse_down__");
-
-		duk_push_int(ctx, mouseX);
-		duk_put_global_string(ctx, "__bitsybox_mouse_x__");
-
-		duk_push_int(ctx, mouseY);
-		duk_put_global_string(ctx, "__bitsybox_mouse_y__");
-
-		duk_push_boolean(ctx, (isButtonLAlt || isButtonRAlt));
-		duk_put_global_string(ctx, "__bitsybox_mouse_alt__");
-
-		duk_push_boolean(ctx, isMouseOnScreen);
-		duk_put_global_string(ctx, "__bitsybox_mouse_hover__");
-
 		updateSystem(ctx, deltaTime);
 
 		// check if it's time to quit
@@ -1776,10 +1709,9 @@ int main(int argc, char* argv[]) {
 		(BITSY_VIDEO_SIZE * renderScale),
 		isFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_RESIZABLE);
 
-	SDL_ShowCursor(!isFullscreen);
+	SDL_ShowCursor(SDL_DISABLE);
 
 	// initialize window settings
-	didWindowResizeThisFrame = isFullscreen;
 	windowWidth = (BITSY_VIDEO_SIZE * renderScale);
 	windowHeight = (BITSY_VIDEO_SIZE * renderScale);
 
