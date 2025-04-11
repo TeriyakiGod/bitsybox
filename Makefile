@@ -15,7 +15,7 @@ PKG_BIN ?= out
 GAMES_DIR := $(PKG_BIN)/games
 DEMO_GAMES_SRC := res/demo_games
 
-SDL2_LIB_PATH := /home/teriyakigod/luckfox-pico/output/out/rootfs_uclibc_rv1106/usr/lib
+SDL2_LIB_PATH := $(RK_PROJECT_OUTPUT)/rootfs_uclibc_rv1106/usr/lib
 SDL2_INCLUDE := ./include/sdl2
 
 LDFLAGS := \
