@@ -3785,7 +3785,7 @@ char* dialog_js =
 	"\n"
 	"	// todo : cache this value? it shouldn't really change in the middle of a game\n"
 	"	function getTextScale() {\n"
-	"		return bitsy.textMode() === bitsy.TXT_LOREZ ? 1 : 2;\n"
+	"		return 1;\n"
 	"	}\n"
 	"\n"
 	"	function relativeFontWidth() {\n"
